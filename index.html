@@ -1,0 +1,1529 @@
+# เว็บไซต์ลอยกระทงออนไลน์ & ออกแบบฐานข้อมูล (21900-1003)
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลอยกระทงออนไลน์ - Loy Krathong Online</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #060918;
+            --bg-night: #12183b;
+            --gold: #ffd166;
+            --gold-glow: rgba(255, 209, 102, 0.5);
+            --pink: #ff7597;
+            --water-top: #1d4e89;
+            --water-bottom: #0b2545;
+            --glass: rgba(18, 24, 59, 0.78);
+            --glass-border: rgba(255, 255, 255, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top, #1b2459 0%, var(--bg-dark) 65%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Background Decor: Stars, Moon, Fireworks */
+        .sky-decor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70vh;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .moon {
+            position: absolute;
+            top: 35px;
+            left: 6%;
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #fff9db, #f5cb5c 65%, #d4a338);
+            box-shadow: 0 0 45px 12px rgba(245, 203, 92, 0.4);
+        }
+
+        .moon::after {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 18px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(212, 163, 56, 0.35);
+            box-shadow: 25px 20px 0 4px rgba(212, 163, 56, 0.25), -8px 32px 0 -2px rgba(212, 163, 56, 0.3);
+        }
+
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .firework {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            animation: burst 4s infinite ease-out;
+        }
+
+        @keyframes burst {
+            0% { transform: scale(0.1); opacity: 1; box-shadow: 0 0 0 0 var(--gold), 0 0 0 0 var(--pink), 0 0 0 0 #4cc9f0; }
+            60% { opacity: 1; }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+                box-shadow:
+                    0 -60px 0 1px var(--gold),
+                    42px -42px 0 1px var(--pink),
+                    60px 0 0 1px #4cc9f0,
+                    42px 42px 0 1px var(--gold),
+                    0 60px 0 1px var(--pink),
+                    -42px 42px 0 1px #4cc9f0,
+                    -60px 0 0 1px var(--gold),
+                    -42px -42px 0 1px var(--pink);
+            }
+        }
+
+        /* Header Navigation */
+        header {
+            position: relative;
+            z-index: 10;
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            background: rgba(6, 9, 24, 0.72);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--gold);
+            cursor: pointer;
+            text-shadow: 0 0 12px var(--gold-glow);
+        }
+
+        .logo-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #ffd166, #ff7597);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #12183b;
+            font-weight: 800;
+            box-shadow: 0 0 12px rgba(255, 209, 102, 0.4);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .step-nav {
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+        }
+
+        .step-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: #cbd5e1;
+            padding: 0.4rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .step-btn.active {
+            background: linear-gradient(135deg, #ffd166, #f4a261);
+            color: #12183b;
+            font-weight: 600;
+            border-color: transparent;
+            box-shadow: 0 0 15px var(--gold-glow);
+        }
+
+        .db-btn {
+            background: rgba(76, 201, 240, 0.16);
+            border: 1px solid #4cc9f0;
+            color: #90e0ef;
+            padding: 0.4rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .db-btn:hover, .db-btn.active {
+            background: #4cc9f0;
+            color: #060918;
+            box-shadow: 0 0 15px rgba(76, 201, 240, 0.5);
+        }
+
+        /* Main Container & Views */
+        main {
+            position: relative;
+            z-index: 5;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem 4%;
+            width: 100%;
+        }
+
+        .view-section {
+            display: none;
+            width: 100%;
+            max-width: 1050px;
+            animation: fadeIn 0.45s ease forwards;
+        }
+
+        .view-section.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(14px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2rem;
+            width: 100%;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+        }
+
+        h1, h2 {
+            color: var(--gold);
+            text-align: center;
+            margin-bottom: 0.4rem;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #cbd5e1;
+            margin-bottom: 1.4rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #ffd166, #f77f00);
+            color: #12183b;
+            border: none;
+            padding: 0.85rem 2rem;
+            border-radius: 999px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(247, 127, 0, 0.45);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 26px rgba(255, 209, 102, 0.65);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            border: 1px solid var(--glass-border);
+            padding: 0.8rem 1.5rem;
+            border-radius: 999px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Floating Animation */
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-9px) rotate(1.2deg); }
+        }
+
+        .krathong-floating {
+            animation: gentleFloat 3.5s ease-in-out infinite;
+            filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.5));
+        }
+
+        @keyframes flicker {
+            0%, 100% { transform: scale(1) rotate(-2deg); opacity: 0.95; }
+            50% { transform: scale(1.08, 0.94) rotate(2deg); opacity: 1; }
+        }
+
+        .flame-anim {
+            transform-origin: center bottom;
+            animation: flicker 0.9s infinite alternate ease-in-out;
+        }
+
+        @keyframes smokeRise {
+            0% { transform: translateY(0) scale(1); opacity: 0.7; }
+            100% { transform: translateY(-14px) scale(1.25); opacity: 0; }
+        }
+
+        .smoke-anim {
+            animation: smokeRise 2.6s infinite ease-out;
+        }
+
+        /* PAGE 1: Home */
+        .hero-box {
+            text-align: center;
+            padding: 2.2rem 1.5rem;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(255, 209, 102, 0.15);
+            border: 1px solid rgba(255, 209, 102, 0.4);
+            color: var(--gold);
+            padding: 0.3rem 1rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero-krathong-showcase {
+            margin: 1rem auto 1.4rem;
+            width: 280px;
+            max-width: 85vw;
+        }
+
+        .hero-title {
+            font-size: clamp(1.85rem, 4.5vw, 2.7rem);
+            font-weight: 700;
+            background: linear-gradient(to right, #fff, #ffd166, #ff9ebb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.6rem;
+        }
+
+        /* PAGE 2: Select Base */
+        .krathong-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        .choice-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid transparent;
+            border-radius: 18px;
+            padding: 1.2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .choice-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .choice-card.selected {
+            border-color: var(--gold);
+            background: rgba(255, 209, 102, 0.13);
+            box-shadow: 0 0 22px rgba(255, 209, 102, 0.25);
+        }
+
+        .choice-card h3 {
+            font-size: 1.05rem;
+            margin: 0.6rem 0 0.25rem;
+            color: #fff;
+        }
+
+        .choice-card p {
+            font-size: 0.82rem;
+            color: #94a3b8;
+            margin-bottom: 0.85rem;
+        }
+
+        .select-pill {
+            padding: 0.35rem 1rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+            transition: all 0.2s;
+        }
+
+        .choice-card.selected .select-pill {
+            background: var(--gold);
+            color: #12183b;
+        }
+
+        /* PAGE 3: Customize */
+        .customize-layout {
+            display: grid;
+            grid-template-columns: 1fr 1.25fr;
+            gap: 1.8rem;
+            align-items: center;
+        }
+
+        @media (max-width: 780px) {
+            .customize-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .preview-stage {
+            background: radial-gradient(circle, rgba(255, 209, 102, 0.16) 0%, rgba(11, 37, 69, 0.65) 75%);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 290px;
+        }
+
+        .control-group {
+            margin-bottom: 1.15rem;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+        }
+
+        .option-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
+        .pill-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: #e2e8f0;
+            padding: 0.45rem 0.9rem;
+            border-radius: 12px;
+            font-size: 0.86rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+
+        .pill-btn.active {
+            background: rgba(255, 209, 102, 0.22);
+            border-color: var(--gold);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .color-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        /* PAGE 4: Wish Form */
+        .wish-form {
+            max-width: 560px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+
+        .form-field label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #e2e8f0;
+            font-size: 0.92rem;
+            font-weight: 500;
+        }
+
+        .form-field input[type="text"],
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            background: rgba(6, 9, 24, 0.72);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            color: #fff;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            border-color: var(--gold);
+        }
+
+        .char-counter {
+            text-align: right;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .radio-card {
+            flex: 1;
+            min-width: 160px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 0.65rem 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .radio-card input[type="radio"] {
+            accent-color: var(--gold);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* PAGE 5: River / Floating Scene */
+        #page-river {
+            max-width: 100%;
+            padding: 0;
+        }
+
+        .success-banner {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(6, 9, 24, 0.85));
+            border: 1px solid rgba(52, 211, 153, 0.5);
+            border-radius: 999px;
+            padding: 0.5rem 1.4rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            color: #6ee7b7;
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);
+        }
+
+        .river-container {
+            position: relative;
+            width: 100%;
+            height: 60vh;
+            min-height: 410px;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            background: linear-gradient(180deg, rgba(18, 24, 59, 0.35) 0%, rgba(18, 24, 59, 0.72) 34%, #1d4e89 35%, #0b2545 100%);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .water-wave {
+            position: absolute;
+            left: -50%;
+            width: 200%;
+            height: 18px;
+            background: repeating-radial-gradient(circle at 50% 0, transparent 0, transparent 22px, rgba(255, 255, 255, 0.08) 23px, transparent 25px);
+            animation: waveMove 12s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes waveMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(25%); }
+        }
+
+        .floating-item {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .floating-item:hover {
+            z-index: 30 !important;
+            transform: scale(1.06);
+        }
+
+        .wish-bubble {
+            background: rgba(10, 15, 38, 0.9);
+            border: 1px solid rgba(255, 209, 102, 0.6);
+            border-radius: 14px;
+            padding: 0.6rem 0.9rem;
+            max-width: 245px;
+            text-align: center;
+            margin-bottom: 6px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+        }
+
+        .wish-category-tag {
+            display: inline-block;
+            background: rgba(255, 209, 102, 0.2);
+            color: var(--gold);
+            font-size: 0.7rem;
+            padding: 0.1rem 0.5rem;
+            border-radius: 999px;
+            margin-bottom: 0.25rem;
+        }
+
+        .wish-bubble .w-text {
+            font-size: 0.84rem;
+            color: #fff;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .wish-bubble .w-author {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 0.25rem;
+        }
+
+        @keyframes driftAcross {
+            0% { left: -240px; }
+            100% { left: 105%; }
+        }
+
+        /* PAGE 6: Database Design & Live Records */
+        .er-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 1.4rem;
+            margin: 1.2rem 0;
+        }
+
+        .entity-card {
+            background: rgba(6, 9, 24, 0.75);
+            border: 1px solid #4cc9f0;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .entity-header {
+            background: linear-gradient(90deg, rgba(76, 201, 240, 0.28), rgba(76, 201, 240, 0.08));
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(76, 201, 240, 0.4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .entity-header h3 {
+            color: #90e0ef;
+            font-size: 1.05rem;
+        }
+
+        .entity-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .entity-table th, .entity-table td {
+            padding: 0.6rem 0.9rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .entity-table th {
+            color: var(--gold);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .key-badge {
+            display: inline-block;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-right: 0.3rem;
+        }
+
+        .pk { background: #ffd166; color: #12183b; }
+        .fk { background: #ff7597; color: #12183b; }
+
+        .analysis-box {
+            background: rgba(255, 209, 102, 0.08);
+            border-left: 4px solid var(--gold);
+            padding: 1rem 1.2rem;
+            border-radius: 0 12px 12px 0;
+            margin: 1.2rem 0;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        .live-table-wrap {
+            overflow-x: auto;
+            margin-top: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Toast Notification */
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #ff4d6d;
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sky Background -->
+    <div class="sky-decor" id="skyDecor">
+        <div class="moon"></div>
+        <div class="firework" style="top: 16%; left: 26%; animation-delay: 0.2s;"></div>
+        <div class="firework" style="top: 12%; right: 20%; animation-delay: 1.8s;"></div>
+        <div class="firework" style="top: 26%; right: 34%; animation-delay: 3.1s;"></div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header>
+        <div class="logo" onclick="goToPage('page-home')">
+            <div class="logo-badge">ลก</div>
+            <span>ลอยกระทงออนไลน์</span>
+        </div>
+        <div class="nav-actions">
+            <nav class="step-nav" id="stepNav">
+                <button class="step-btn active" data-target="page-home" onclick="goToPage('page-home')">1. หน้าแรก</button>
+                <button class="step-btn" data-target="page-select" onclick="goToPage('page-select')">2. เลือกประเภท</button>
+                <button class="step-btn" data-target="page-customize" onclick="goToPage('page-customize')">3. ตกแต่ง</button>
+                <button class="step-btn" data-target="page-wish" onclick="goToPage('page-wish')">4. คำอธิษฐาน</button>
+                <button class="step-btn" data-target="page-river" onclick="goToPage('page-river')">5. ปล่อยกระทง</button>
+            </nav>
+            <button class="db-btn" id="dbNavBtn" onclick="goToPage('page-database')">
+                🗄️ โครงสร้างฐานข้อมูล (ER)
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <!-- PAGE 1: HOME PAGE -->
+        <section id="page-home" class="view-section active">
+            <div class="glass-card hero-box">
+                <div class="hero-badge">🌕 สืบสานประเพณีไทย รักษ์สิ่งแวดล้อม</div>
+                <div class="hero-krathong-showcase krathong-floating" id="heroKrathong"></div>
+                <h1 class="hero-title">เทศกาลลอยกระทงออนไลน์</h1>
+                <p class="subtitle" style="max-width: 600px; margin: 0 auto 1.6rem;">
+                    ร่วมขอขมาพระแม่คงคาและอธิษฐานขอพรผ่านสายน้ำดิจิทัล ลดปริมาณขยะในแม่น้ำลำคลอง 
+                    เลือกรูปแบบกระทง ตกแต่งสีสันตามใจชอบ และปล่อยกระทงลงสู่แม่น้ำจำลองได้ทันที
+                </p>
+                <button class="btn-primary" onclick="goToPage('page-select')">
+                    ✨ เริ่มลอยกระทง
+                </button>
+            </div>
+        </section>
+
+        <!-- PAGE 2: SELECT KRATHONG TYPE (4 Types) -->
+        <section id="page-select" class="view-section">
+            <div class="glass-card">
+                <h2>1. เลือกประเภทกระทง</h2>
+                <p class="subtitle">เลือกรูปแบบฐานกระทงมงคลทั้ง 4 ประเภทที่ต้องการ</p>
+                <div class="krathong-grid" id="baseGrid"></div>
+                <div class="btn-group">
+                    <button class="btn-secondary" onclick="goToPage('page-home')">← กลับหน้าแรก</button>
+                    <button class="btn-primary" onclick="goToPage('page-customize')">ถัดไป: ตกแต่งกระทง →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 3: CUSTOMIZE KRATHONG -->
+        <section id="page-customize" class="view-section">
+            <div class="glass-card">
+                <h2>2. ตกแต่งกระทงของคุณ</h2>
+                <p class="subtitle">ปรับแต่งสีกระทง สีดอกไม้ รูปแบบเทียน และของตกแต่งพิเศษ</p>
+                <div class="customize-layout">
+                    <div class="preview-stage">
+                        <div class="krathong-floating" id="customPreviewSvg" style="width: 240px;"></div>
+                        <span style="font-size: 0.82rem; color: #94a3b8; margin-top: 0.8rem;">ตัวอย่างกระทงแบบเรียลไทม์</span>
+                    </div>
+                    <div>
+                        <div class="control-group">
+                            <label>1. สีของฐานกระทง</label>
+                            <div class="option-pills" id="baseColorOptions"></div>
+                        </div>
+                        <div class="control-group">
+                            <label>2. สีกลีบดอกไม้</label>
+                            <div class="option-pills" id="flowerColorOptions"></div>
+                        </div>
+                        <div class="control-group">
+                            <label>3. รูปแบบเทียนมงคล</label>
+                            <div class="option-pills" id="candleStyleOptions"></div>
+                        </div>
+                        <div class="control-group">
+                            <label>4. ของตกแต่งพิเศษ</label>
+                            <div class="option-pills" id="decorOptions"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-secondary" onclick="goToPage('page-select')">← เปลี่ยนประเภทกระทง</button>
+                    <button class="btn-primary" onclick="goToPage('page-wish')">ถัดไป: กรอกคำอธิษฐาน →</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 4: WISH FORM -->
+        <section id="page-wish" class="view-section">
+            <div class="glass-card">
+                <h2>3. กรอกข้อมูลและคำอธิษฐาน</h2>
+                <p class="subtitle">ตั้งจิตอธิษฐานขอพรก่อนปล่อยกระทงลงสู่สายน้ำ</p>
+                <div class="wish-form">
+                    <div class="form-field">
+                        <label for="userName">ชื่อเล่น (ไม่บังคับ)</label>
+                        <input type="text" id="userName" maxlength="30" placeholder="เช่น น้องใบตอง, ต้นกล้า...">
+                    </div>
+
+                    <div class="form-field">
+                        <label for="wishCategory">หมวดคำอธิษฐาน</label>
+                        <select id="wishCategory">
+                            <option value="การเรียน / การงาน">📚 การเรียน / การงาน</option>
+                            <option value="ความรัก">💖 ความรัก</option>
+                            <option value="ครอบครัว">🏡 ครอบครัว</option>
+                            <option value="สุขภาพ">🌿 สุขภาพแข็งแรง</option>
+                            <option value="โชคลาภ / อื่น ๆ">💰 โชคลาภ / อื่น ๆ</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="userWish">คำอธิษฐาน (ไม่เกิน 100 ตัวอักษร) *</label>
+                        <textarea id="userWish" rows="3" maxlength="100" placeholder="พิมพ์คำอธิษฐานของคุณที่นี่ เช่น ขอให้สอบผ่านทุกวิชา ครอบครัวมีความสุข..."></textarea>
+                        <div class="char-counter"><span id="charCount">0</span> / 100 ตัวอักษร</div>
+                    </div>
+
+                    <div class="form-field">
+                        <label>การแสดงชื่อบนป้ายคำอธิษฐาน</label>
+                        <div class="radio-group">
+                            <label class="radio-card">
+                                <input type="radio" name="showNameOpt" value="show" checked>
+                                <span>แสดงชื่อผู้ลอย</span>
+                            </label>
+                            <label class="radio-card">
+                                <input type="radio" name="showNameOpt" value="hide">
+                                <span>ไม่แสดงชื่อ (ไม่ระบุตัวตน)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <button class="btn-secondary" onclick="goToPage('page-customize')">← กลับไปตกแต่ง</button>
+                        <button class="btn-primary" onclick="launchKrathong()">🌊 ยืนยันและปล่อยกระทง</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 5: FLOATING RIVER PAGE -->
+        <section id="page-river" class="view-section">
+            <div style="text-align: center; margin-bottom: 0.6rem;">
+                <div class="success-banner" id="successBanner" style="display: none;">
+                    ✅ ลอยกระทงสำเร็จ! คำอธิษฐานของคุณถูกบันทึกและลอยสู่สายน้ำแล้ว
+                </div>
+                <h2>สายน้ำแห่งคำอธิษฐาน</h2>
+                <p class="subtitle" style="margin-bottom: 0.6rem;">คลิกที่กระทงเพื่ออ่านคำอธิษฐาน หรือดูบันทึกข้อมูลลงฐานข้อมูล</p>
+            </div>
+
+            <div class="river-container" id="riverScene">
+                <div class="water-wave" style="top: 38%;"></div>
+                <div class="water-wave" style="top: 56%; animation-duration: 16s;"></div>
+                <div class="water-wave" style="top: 76%; animation-duration: 10s;"></div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 1.2rem;">
+                <button class="btn-primary" onclick="resetAndGoSelect()">✨ ลอยอีกครั้ง</button>
+                <button class="btn-secondary" onclick="goToPage('page-home')">🏠 กลับหน้าแรก</button>
+                <button class="db-btn" style="padding: 0.8rem 1.4rem; font-size: 0.95rem;" onclick="goToPage('page-database')">
+                    🗄️ ดูข้อมูลที่บันทึกในฐานข้อมูล
+                </button>
+            </div>
+        </section>
+
+        <!-- PAGE 6: DATABASE DESIGN & ANALYSIS (21900-1003) -->
+        <section id="page-database" class="view-section">
+            <div class="glass-card">
+                <h2>ภารกิจด้านฐานข้อมูล (รายวิชา 21900-1003)</h2>
+                <p class="subtitle">การออกแบบโครงสร้าง Entity-Relationship (ER) และตารางจัดเก็บข้อมูลจริงของระบบ</p>
+
+                <div class="analysis-box">
+                    <strong>📌 การวิเคราะห์ความจำเป็นของข้อมูลต่อระบบ:</strong><br>
+                    เว็บไซต์ลอยกระทงออนไลน์จำเป็นต้องจัดเก็บข้อมูลเพื่อบันทึกรายการลอยกระทงของผู้ใช้งานแต่ละครั้ง นำมาแสดงผลกระทงพร้อมคำอธิษฐานบนหน้าแม่น้ำจำลองแบบเรียลไทม์ รวมถึงใช้สรุปสถิติจำนวนผู้เข้าร่วมกิจกรรม ประเภทกระทงยอดนิยม และหมวดหมู่คำอธิษฐานในแต่ละปี
+                </div>
+
+                <!-- 2 Entities with >= 3 Attributes -->
+                <div class="er-grid">
+                    <!-- Entity 1 -->
+                    <div class="entity-card">
+                        <div class="entity-header">
+                            <h3>Entity 1: KRATHONG_TYPE (ประเภทกระทง)</h3>
+                            <span style="font-size: 0.78rem; color: #cbd5e1;">ตารางหลัก (Master)</span>
+                        </div>
+                        <table class="entity-table">
+                            <thead>
+                                <tr>
+                                    <th>Attribute</th>
+                                    <th>ชนิดข้อมูล</th>
+                                    <th>หน้าที่และความสำคัญ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="key-badge pk">PK</span>type_id</td>
+                                    <td>VARCHAR(10)</td>
+                                    <td>รหัสอ้างอิงประเภทกระทง ไม่ซ้ำกัน</td>
+                                </tr>
+                                <tr>
+                                    <td>type_name</td>
+                                    <td>VARCHAR(50)</td>
+                                    <td>ชื่อประเภท (เช่น กระทงใบตอง, ดอกบัว)</td>
+                                </tr>
+                                <tr>
+                                    <td>material_desc</td>
+                                    <td>VARCHAR(100)</td>
+                                    <td>รายละเอียดวัสดุและความหมายมงคล</td>
+                                </tr>
+                                <tr>
+                                    <td>base_default_color</td>
+                                    <td>VARCHAR(20)</td>
+                                    <td>รหัสสีเริ่มต้นของฐานกระทง</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Entity 2 -->
+                    <div class="entity-card">
+                        <div class="entity-header">
+                            <h3>Entity 2: FLOATING_RECORD (การลอยกระทง)</h3>
+                            <span style="font-size: 0.78rem; color: #cbd5e1;">ตารางรายการ (Transaction)</span>
+                        </div>
+                        <table class="entity-table">
+                            <thead>
+                                <tr>
+                                    <th>Attribute</th>
+                                    <th>ชนิดข้อมูล</th>
+                                    <th>หน้าที่และความสำคัญ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="key-badge pk">PK</span>record_id</td>
+                                    <td>INT (Auto)</td>
+                                    <td>รหัสลำดับการลอยกระทงแต่ละรายการ</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="key-badge fk">FK</span>type_id</td>
+                                    <td>VARCHAR(10)</td>
+                                    <td>เชื่อมโยงประเภทกระทงที่ผู้ใช้เลือก</td>
+                                </tr>
+                                <tr>
+                                    <td>nickname</td>
+                                    <td>VARCHAR(30)</td>
+                                    <td>ชื่อเล่นผู้ลอย (หรือ "ไม่ระบุตัวตน")</td>
+                                </tr>
+                                <tr>
+                                    <td>wish_category</td>
+                                    <td>VARCHAR(30)</td>
+                                    <td>หมวดคำอธิษฐาน (การเรียน, ความรัก ฯลฯ)</td>
+                                </tr>
+                                <tr>
+                                    <td>wish_text</td>
+                                    <td>VARCHAR(100)</td>
+                                    <td>ข้อความคำอธิษฐานของผู้ใช้งาน</td>
+                                </tr>
+                                <tr>
+                                    <td>decor_detail</td>
+                                    <td>VARCHAR(100)</td>
+                                    <td>สีฐาน สีดอกไม้ รูปแบบเทียน และของตกแต่ง</td>
+                                </tr>
+                                <tr>
+                                    <td>float_date</td>
+                                    <td>DATETIME</td>
+                                    <td>วันที่และเวลาที่กดปล่อยกระทง</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--gold); margin-top: 1.5rem; font-size: 1.05rem;">
+                    📊 ข้อมูลจริงที่ถูกบันทึกในตาราง FLOATING_RECORD (อัปเดตอัตโนมัติเมื่อกดลอยกระทง)
+                </h3>
+                <div class="live-table-wrap">
+                    <table class="entity-table" id="liveDbTable">
+                        <thead>
+                            <tr>
+                                <th>record_id</th>
+                                <th>type_id (ประเภท)</th>
+                                <th>nickname</th>
+                                <th>wish_category</th>
+                                <th>wish_text</th>
+                                <th>decor_detail</th>
+                                <th>float_date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liveDbBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-secondary" onclick="goToPage('page-home')">🏠 กลับหน้าแรก</button>
+                    <button class="btn-primary" onclick="goToPage('page-river')">🌊 ไปหน้าแม่น้ำลอยกระทง</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast">กรุณาพิมพ์คำอธิษฐานก่อนปล่อยกระทง</div>
+
+    <script>
+        // Master Data: 4 Krathong Types matching the assignment
+        const baseTypes = [
+            {
+                id: 'KT01',
+                name: 'กระทงใบตอง',
+                desc: 'ใบตองพับกลีบแบบดั้งเดิม ย่อยสลายง่าย อนุรักษ์ธรรมชาติ',
+                defaultBase: '#7cb518'
+            },
+            {
+                id: 'KT02',
+                name: 'กระทงดอกบัว',
+                desc: 'กลีบบัวซ้อนชั้นประณีต สื่อถึงความบริสุทธิ์และความเจริญรุ่งเรือง',
+                defaultBase: '#f48fb1'
+            },
+            {
+                id: 'KT03',
+                name: 'กระทงกะลามะพร้าว',
+                desc: 'ฐานกะลาขัดเงาแข็งแรง ทนทาน สื่อถึงความมั่นคงในชีวิต',
+                defaultBase: '#8d5524'
+            },
+            {
+                id: 'KT04',
+                name: 'กระทงแฟนตาซีดิจิทัล',
+                desc: 'กระทงเรืองแสงสีรุ้งล้ำสมัย เปล่งประกายบนสายน้ำดิจิทัล',
+                defaultBase: '#7209b7'
+            }
+        ];
+
+        const baseColors = [
+            { name: 'เขียวใบตอง', hex: '#7cb518' },
+            { name: 'ชมพูกลีบบัว', hex: '#f48fb1' },
+            { name: 'น้ำตาลกะลา', hex: '#8d5524' },
+            { name: 'ม่วงแฟนตาซี', hex: '#7209b7' },
+            { name: 'ทองมงคล', hex: '#e09f3e' }
+        ];
+
+        const flowerColors = [
+            { name: 'ชมพูบานเย็น', hex: '#ff85a1' },
+            { name: 'ขาวบริสุทธิ์', hex: '#f8f9fa' },
+            { name: 'เหลืองดาวเรือง', hex: '#ffb703' },
+            { name: 'ฟ้าคราม', hex: '#4cc9f0' }
+        ];
+
+        const candleStyles = [
+            { id: 'classic', name: '🕯️ เทียนเดี่ยวสีขาว' },
+            { id: 'gold', name: '✨ เทียนทองมงคล' },
+            { id: 'twin', name: '🕯️🕯️ เทียนคู่แห่งรัก' }
+        ];
+
+        const decorOptions = [
+            { id: 'coins', name: '🪙 เหรียญทองมั่งคั่ง' },
+            { id: 'ribbon', name: '🎀 โบว์ริบบิ้นมงคล' },
+            { id: 'swan', name: '🦢 หงส์คู่ประดับ' },
+            { id: 'sparkle', name: '✨ ประกายดาวดิจิทัล' }
+        ];
+
+        // Current User State (Default matches user's uploaded golden-coin & lotus Krathong without name)
+        let state = {
+            baseType: 'KT01',
+            baseColor: '#7cb518',
+            flowerColor: '#ff85a1',
+            candleStyle: 'classic',
+            decor: 'coins'
+        };
+
+        // Simulated Database Records (Entity: FLOATING_RECORD)
+        let databaseRecords = [
+            {
+                record_id: 1001,
+                type_id: 'KT01',
+                type_name: 'กระทงใบตอง',
+                nickname: 'ผู้ร่วมงาน',
+                wish_category: 'โชคลาภ / อื่น ๆ',
+                wish_text: 'ขอให้โชคดีทุกปี ร่ำรวยเงินทอง สุขภาพแข็งแรง',
+                decor_detail: 'ฐานเขียวใบตอง, ดอกชมพู, เทียนเดี่ยว, เหรียญทอง',
+                float_date: '2026-11-24 08:30:12',
+                config: { baseType: 'KT01', baseColor: '#7cb518', flowerColor: '#ff85a1', candleStyle: 'classic', decor: 'coins' },
+                top: 42,
+                duration: 28,
+                delay: -8
+            },
+            {
+                record_id: 1002,
+                type_id: 'KT02',
+                type_name: 'กระทงดอกบัว',
+                nickname: 'น้องใบบัว',
+                wish_category: 'การเรียน / การงาน',
+                wish_text: 'ขอให้เรียนจบเกียรตินิยม สอบผ่านทุกวิชาที่ตั้งใจ',
+                decor_detail: 'ฐานชมพูกลีบบัว, ดอกขาว, เทียนทอง, โบว์ริบบิ้น',
+                float_date: '2026-11-24 08:42:05',
+                config: { baseType: 'KT02', baseColor: '#f48fb1', flowerColor: '#f8f9fa', candleStyle: 'gold', decor: 'ribbon' },
+                top: 63,
+                duration: 33,
+                delay: -19
+            }
+        ];
+
+        // Generate Dynamic SVG for Krathong
+        function renderKrathongSVG(cfg) {
+            const bCol = cfg.baseColor;
+            const fCol = cfg.flowerColor;
+
+            // Special Decorations
+            let decorSvg = '';
+            if (cfg.decor === 'coins') {
+                decorSvg = `
+                    <g>
+                        <ellipse cx="75" cy="94" rx="14" ry="5" fill="#d97706" stroke="#92400e" stroke-width="1"/>
+                        <ellipse cx="75" cy="88" rx="14" ry="5" fill="#f59e0b" stroke="#92400e" stroke-width="1"/>
+                        <ellipse cx="75" cy="82" rx="14" ry="5" fill="#fbbf24" stroke="#b45309" stroke-width="1"/>
+                        <text x="75" y="84" font-size="6.5" font-weight="bold" fill="#92400e" text-anchor="middle">$</text>
+                        <ellipse cx="145" cy="94" rx="14" ry="5" fill="#d97706" stroke="#92400e" stroke-width="1"/>
+                        <ellipse cx="145" cy="88" rx="14" ry="5" fill="#f59e0b" stroke="#92400e" stroke-width="1"/>
+                        <ellipse cx="145" cy="82" rx="14" ry="5" fill="#fbbf24" stroke="#b45309" stroke-width="1"/>
+                        <text x="145" y="84" font-size="6.5" font-weight="bold" fill="#92400e" text-anchor="middle">$</text>
+                    </g>`;
+            } else if (cfg.decor === 'ribbon') {
+                decorSvg = `
+                    <g transform="translate(110, 145)">
+                        <path d="M0 0 L-18 -10 L-14 8 Z" fill="#ff4d6d"/>
+                        <path d="M0 0 L18 -10 L14 8 Z" fill="#ff4d6d"/>
+                        <circle cx="0" cy="0" r="5" fill="#ffd166"/>
+                    </g>`;
+            } else if (cfg.decor === 'swan') {
+                decorSvg = `
+                    <g fill="#ffffff" stroke="#cbd5e1" stroke-width="1">
+                        <path d="M62 112 Q55 95 66 86 Q72 82 70 90 Q66 96 72 108 Z"/>
+                        <path d="M158 112 Q165 95 154 86 Q148 82 150 90 Q154 96 148 108 Z"/>
+                    </g>`;
+            } else if (cfg.decor === 'sparkle') {
+                decorSvg = `
+                    <g fill="#ffd166">
+                        <polygon points="58,78 60,84 66,86 60,88 58,94 56,88 50,86 56,84"/>
+                        <polygon points="162,78 164,84 170,86 164,88 162,94 160,88 154,86 160,84"/>
+                    </g>`;
+            }
+
+            // Candles & Incense
+            let candleSvg = '';
+            if (cfg.candleStyle === 'twin') {
+                candleSvg = `
+                    <rect x="98" y="64" width="9" height="36" rx="2" fill="#ff7597"/>
+                    <path class="flame-anim" d="M102.5 47 Q108 56 102.5 63 Q97 56 102.5 47 Z" fill="#ff9f1c"/>
+                    <rect x="113" y="64" width="9" height="36" rx="2" fill="#ff7597"/>
+                    <path class="flame-anim" d="M117.5 47 Q123 56 117.5 63 Q112 56 117.5 47 Z" fill="#ff9f1c"/>`;
+            } else {
+                const cFill = cfg.candleStyle === 'gold' ? '#ffd166' : '#f8edeb';
+                candleSvg = `
+                    <rect x="105" y="62" width="10" height="38" rx="2" fill="${cFill}" stroke="#d6ccc2" stroke-width="0.8"/>
+                    <path class="flame-anim" d="M110 44 Q116 54 110 61 Q104 54 110 44 Z" fill="#ff9f1c"/>
+                    <path class="flame-anim" d="M110 49 Q113 55 110 59 Q107 55 110 49 Z" fill="#fff3b0"/>`;
+            }
+
+            // Base Shape by Krathong Type
+            let baseLayer = '';
+            if (cfg.baseType === 'KT03') {
+                // Coconut shell bowl
+                baseLayer = `
+                    <path d="M48 128 Q110 175 172 128 Z" fill="${bCol}" stroke="#4a2c11" stroke-width="2"/>
+                    <ellipse cx="110" cy="128" rx="62" ry="9" fill="#a47148"/>`;
+            } else if (cfg.baseType === 'KT04') {
+                // Digital Fantasy glowing crystal base
+                baseLayer = `
+                    <polygon points="42,128 178,128 158,156 62,156" fill="${bCol}" stroke="#4cc9f0" stroke-width="2"/>
+                    <polygon points="55,112 85,128 45,128" fill="#4cc9f0" opacity="0.85"/>
+                    <polygon points="110,108 130,128 90,128" fill="#ff7597" opacity="0.9"/>
+                    <polygon points="165,112 175,128 135,128" fill="#4cc9f0" opacity="0.85"/>`;
+            } else if (cfg.baseType === 'KT02') {
+                // Multi-layered Lotus petals
+                baseLayer = `
+                    <rect x="55" y="136" width="110" height="18" rx="6" fill="${bCol}"/>
+                    <path d="M45 136 Q60 105 80 136 Z" fill="${bCol}" stroke="#fff" stroke-width="0.8"/>
+                    <path d="M70 136 Q90 100 110 136 Z" fill="${bCol}" stroke="#fff" stroke-width="0.8"/>
+                    <path d="M110 136 Q130 100 150 136 Z" fill="${bCol}" stroke="#fff" stroke-width="0.8"/>
+                    <path d="M140 136 Q160 105 175 136 Z" fill="${bCol}" stroke="#fff" stroke-width="0.8"/>`;
+            } else {
+                // Classic Banana Leaf (KT01)
+                baseLayer = `
+                    <rect x="52" y="132" width="116" height="22" rx="4" fill="${bCol}"/>
+                    <line x1="52" y1="140" x2="168" y2="140" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+                    <line x1="52" y1="147" x2="168" y2="147" stroke="rgba(255,255,255,0.4)" stroke-width="1.5"/>
+                    <path d="M46 132 Q42 110 64 116 Q72 128 62 132 Z" fill="#2b9348" stroke="#b5e48c" stroke-width="2"/>
+                    <path d="M68 132 Q78 106 88 132 Z" fill="#2b9348" stroke="#b5e48c" stroke-width="2"/>
+                    <path d="M90 132 Q100 106 110 132 Z" fill="#2b9348" stroke="#b5e48c" stroke-width="2"/>
+                    <path d="M110 132 Q120 106 130 132 Z" fill="#2b9348" stroke="#b5e48c" stroke-width="2"/>
+                    <path d="M132 132 Q142 106 152 132 Z" fill="#2b9348" stroke="#b5e48c" stroke-width="2"/>
+                    <path d="M174 132 Q178 110 156 116 Q148 128 158 132 Z" fill="#2b9348" stroke="#b5e48c" stroke-width="2"/>`;
+            }
+
+            return `
+            <svg viewBox="0 0 220 170" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="110" cy="156" rx="76" ry="9" fill="rgba(255, 255, 255, 0.2)"/>
+                <path class="smoke-anim" d="M92 38 Q86 30 93 24 Q99 18 92 12" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="90" y1="44" x2="90" y2="95" stroke="#5c4033" stroke-width="2"/>
+                <line x1="95" y1="42" x2="95" y2="95" stroke="#5c4033" stroke-width="2"/>
+                <line x1="100" y1="45" x2="100" y2="95" stroke="#5c4033" stroke-width="2"/>
+                <circle cx="90" cy="44" r="1.8" fill="#ff5400"/>
+                <circle cx="95" cy="42" r="1.8" fill="#ff5400"/>
+                <circle cx="100" cy="45" r="1.8" fill="#ff5400"/>
+
+                ${decorSvg}
+                ${candleSvg}
+
+                <!-- Upper Flower Petals -->
+                <g fill="${fCol}" stroke="rgba(0,0,0,0.12)" stroke-width="0.8">
+                    <path d="M95 105 Q110 72 125 105 Z"/>
+                    <path d="M75 108 Q92 78 108 108 Z"/>
+                    <path d="M112 108 Q128 78 145 108 Z"/>
+                    <path d="M58 114 Q76 86 94 114 Z"/>
+                    <path d="M126 114 Q144 86 162 114 Z"/>
+                    <ellipse cx="110" cy="112" rx="48" ry="12"/>
+                </g>
+
+                ${baseLayer}
+
+                <!-- Small Accent Blossoms -->
+                <g fill="#ffccd5">
+                    <circle cx="66" cy="128" r="5"/>
+                    <circle cx="154" cy="128" r="5"/>
+                    <circle cx="110" cy="112" r="4.5"/>
+                </g>
+            </svg>`;
+        }
+
+        // Initialize Sky Stars
+        function initStars() {
+            const sky = document.getElementById('skyDecor');
+            for (let i = 0; i < 40; i++) {
+                const s = document.createElement('div');
+                s.className = 'star';
+                const size = Math.random() * 2.5 + 1;
+                s.style.width = size + 'px';
+                s.style.height = size + 'px';
+                s.style.top = Math.random() * 62 + '%';
+                s.style.left = Math.random() * 100 + '%';
+                s.style.animationDelay = (Math.random() * 3) + 's';
+                sky.appendChild(s);
+            }
+        }
+
+        // Navigation
+        function goToPage(pageId) {
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            document.querySelectorAll('.step-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.target === pageId);
+            });
+            document.getElementById('dbNavBtn').classList.toggle('active', pageId === 'page-database');
+
+            if (pageId === 'page-customize') updateCustomPreview();
+            if (pageId === 'page-river') renderRiver();
+            if (pageId === 'page-database') renderDatabaseTable();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Render Page 2 Options (4 Types)
+        function renderBaseChoices() {
+            const grid = document.getElementById('baseGrid');
+            grid.innerHTML = baseTypes.map(item => `
+                <div class="choice-card ${state.baseType === item.id ? 'selected' : ''}" onclick="selectBaseType('${item.id}', '${item.defaultBase}')">
+                    <div style="width: 145px;">
+                        ${renderKrathongSVG({ ...state, baseType: item.id, baseColor: item.defaultBase })}
+                    </div>
+                    <div>
+                        <h3>${item.name}</h3>
+                        <p>${item.desc}</p>
+                    </div>
+                    <span class="select-pill">${state.baseType === item.id ? '✓ เลือกอยู่' : 'เลือกกระทงนี้'}</span>
+                </div>
+            `).join('');
+        }
+
+        function selectBaseType(id, defaultBase) {
+            state.baseType = id;
+            state.baseColor = defaultBase;
+            renderBaseChoices();
+            renderCustomizeControls();
+        }
+
+        // Render Page 3 Controls
+        function renderCustomizeControls() {
+            document.getElementById('baseColorOptions').innerHTML = baseColors.map(c => `
+                <button class="pill-btn ${state.baseColor === c.hex ? 'active' : ''}" onclick="setOption('baseColor', '${c.hex}')">
+                    <span class="color-dot" style="background:${c.hex}"></span>${c.name}
+                </button>
+            `).join('');
+
+            document.getElementById('flowerColorOptions').innerHTML = flowerColors.map(c => `
+                <button class="pill-btn ${state.flowerColor === c.hex ? 'active' : ''}" onclick="setOption('flowerColor', '${c.hex}')">
+                    <span class="color-dot" style="background:${c.hex}"></span>${c.name}
+                </button>
+            `).join('');
+
+            document.getElementById('candleStyleOptions').innerHTML = candleStyles.map(c => `
+                <button class="pill-btn ${state.candleStyle === c.id ? 'active' : ''}" onclick="setOption('candleStyle', '${c.id}')">
+                    ${c.name}
+                </button>
+            `).join('');
+
+            document.getElementById('decorOptions').innerHTML = decorOptions.map(d => `
+                <button class="pill-btn ${state.decor === d.id ? 'active' : ''}" onclick="setOption('decor', '${d.id}')">
+                    ${d.name}
+                </button>
+            `).join('');
+        }
+
+        function setOption(key, val) {
+            state[key] = val;
+            renderCustomizeControls();
+            updateCustomPreview();
+        }
+
+        function updateCustomPreview() {
+            document.getElementById('customPreviewSvg').innerHTML = renderKrathongSVG(state);
+        }
+
+        // Character Counter for Wish Text (Max 100)
+        const wishInput = document.getElementById('userWish');
+        const charCount = document.getElementById('charCount');
+        wishInput.addEventListener('input', () => {
+            charCount.textContent = wishInput.value.length;
+        });
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // Format Current DateTime
+        function getFormattedNow() {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        }
+
+        // Launch Krathong & Save to Simulated DB
+        function launchKrathong() {
+            const wish = wishInput.value.trim();
+            if (!wish) {
+                showToast('กรุณาพิมพ์คำอธิษฐานก่อนกดยืนยันและปล่อยกระทง');
+                wishInput.focus();
+                return;
+            }
+
+            const showNameOpt = document.querySelector('input[name="showNameOpt"]:checked').value;
+            const rawName = document.getElementById('userName').value.trim();
+            const displayName = (showNameOpt === 'hide') ? 'ไม่ระบุตัวตน' : (rawName || 'ผู้ร่วมลอยกระทง');
+            const category = document.getElementById('wishCategory').value;
+
+            const typeObj = baseTypes.find(b => b.id === state.baseType);
+            const bColName = baseColors.find(c => c.hex === state.baseColor)?.name || state.baseColor;
+            const fColName = flowerColors.find(c => c.hex === state.flowerColor)?.name || state.flowerColor;
+            const cStyleName = candleStyles.find(c => c.id === state.candleStyle)?.name.replace(/^[^\s]+\s/, '') || '';
+            const decorName = decorOptions.find(d => d.id === state.decor)?.name.replace(/^[^\s]+\s/, '') || '';
+
+            const newRecord = {
+                record_id: 1000 + databaseRecords.length + 1,
+                type_id: state.baseType,
+                type_name: typeObj ? typeObj.name : state.baseType,
+                nickname: displayName,
+                wish_category: category,
+                wish_text: wish,
+                decor_detail: `ฐาน${bColName}, ดอก${fColName}, ${cStyleName}, ${decorName}`,
+                float_date: getFormattedNow(),
+                config: { ...state },
+                top: 46,
+                duration: 30,
+                delay: -2
+            };
+
+            databaseRecords.unshift(newRecord);
+            document.getElementById('successBanner').style.display = 'inline-flex';
+            goToPage('page-river');
+        }
+
+        function resetAndGoSelect() {
+            document.getElementById('successBanner').style.display = 'none';
+            wishInput.value = '';
+            charCount.textContent = '0';
+            goToPage('page-select');
+        }
+
+        // Render River Scene (Page 5)
+        function renderRiver() {
+            const river = document.getElementById('riverScene');
+            river.querySelectorAll('.floating-item').forEach(el => el.remove());
+
+            databaseRecords.forEach((item, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'floating-item';
+                const topPos = item.top || (40 + (idx * 13) % 32);
+                const scale = 0.85 + (topPos - 40) * 0.008;
+
+                wrapper.style.top = topPos + '%';
+                wrapper.style.zIndex = Math.floor(topPos);
+                wrapper.style.animation = `driftAcross ${item.duration || 32}s linear ${item.delay || (-idx * 6)}s infinite`;
+
+                wrapper.innerHTML = `
+                    <div class="wish-bubble">
+                        <span class="wish-category-tag">${escapeHTML(item.wish_category)}</span>
+                        <div class="w-text">"${escapeHTML(item.wish_text)}"</div>
+                        <div class="w-author">— ${escapeHTML(item.nickname)}</div>
+                    </div>
+                    <div class="krathong-floating" style="width: ${Math.round(165 * scale)}px;">
+                        ${renderKrathongSVG(item.config)}
+                    </div>
+                `;
+                river.appendChild(wrapper);
+            });
+        }
+
+        // Render Database Live Table (Page 6)
+        function renderDatabaseTable() {
+            const tbody = document.getElementById('liveDbBody');
+            tbody.innerHTML = databaseRecords.map(rec => `
+                <tr>
+                    <td><strong>#${rec.record_id}</strong></td>
+                    <td>${rec.type_id} (${escapeHTML(rec.type_name)})</td>
+                    <td>${escapeHTML(rec.nickname)}</td>
+                    <td>${escapeHTML(rec.wish_category)}</td>
+                    <td>${escapeHTML(rec.wish_text)}</td>
+                    <td>${escapeHTML(rec.decor_detail)}</td>
+                    <td style="white-space: nowrap;">${rec.float_date}</td>
+                </tr>
+            `).join('');
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        // Initial Boot
+        initStars();
+        document.getElementById('heroKrathong').innerHTML = renderKrathongSVG(state);
+        renderBaseChoices();
+        renderCustomizeControls();
+        renderDatabaseTable();
+    </script>
+</body>
+</html>
+
+
